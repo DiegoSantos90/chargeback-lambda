@@ -1,0 +1,31 @@
+{
+  "body": null,
+  "resource": "/health",
+  "path": "/health",
+  "httpMethod": "GET",
+  "isBase64Encoded": false,
+  "queryStringParameters": null,
+  "pathParameters": null,
+  "stageVariables": null,
+  "headers": {
+    "Accept": "*/*",
+    "Content-Type": "application/json",
+    "Host": "localhost:3000",
+    "User-Agent": "curl/8.7.1"
+  },
+  "requestContext": {
+    "accountId": "123456789012",
+    "apiId": "local-api-id",
+    "protocol": "HTTP/1.1",
+    "httpMethod": "GET",
+    "path": "/health",
+    "stage": "Prod",
+    "requestId": "sam-health-check-id",
+    "requestTime": "19/Oct/2025:14:00:00 +0000",
+    "requestTimeEpoch": 1729341600000,
+    "identity": {
+      "sourceIp": "127.0.0.1",
+      "userAgent": "curl/8.7.1"
+    }
+  }
+}

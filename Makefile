@@ -1,6 +1,6 @@
-# Makefile for Chargeback API - Lambda Function
+# Makefile for Chargeback Lambda Function
 
-.PHONY: test test-coverage test-internal test-unit test-integration test-domain test-infra clean build run dev docker-build docker-run lint fmt vet deps help build-lambda deploy-lambda test-lambda
+.PHONY: test test-coverage test-internal test-unit test-integration test-domain test-infra clean lint fmt vet deps help build-lambda deploy-lambda test-lambda-local start-sam stop-sam
 
 # Build configuration
 APP_NAME=chargeback-lambda
@@ -12,40 +12,34 @@ FUNCTION_NAME=chargeback-api
 # Go test configuration
 INTERNAL_PACKAGES=./internal/...
 UNIT_PACKAGES=./internal/domain/... ./internal/usecase/...
-INTEGRATION_PACKAGES=./internal/infra/... ./internal/api/... ./internal/server/...
+INTEGRATION_PACKAGES=./internal/infra/...
 DOMAIN_PACKAGES=./internal/domain/...
 INFRA_PACKAGES=./internal/infra/...
 
 # Default target
 help: ## Show this help message
-	@echo "🚀 Chargeback API - Available targets:"
+	@echo "🚀 Chargeback Lambda - Available targets:"
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-build: ## Build the application
-	@echo "🔨 Building $(APP_NAME)..."
-	@go build -o $(BUILD_DIR)/$(APP_NAME) ./cmd/api
-	@echo "✅ Build complete: $(BUILD_DIR)/$(APP_NAME)"
-
-run: build ## Build and run the application
-	@echo "🚀 Starting $(APP_NAME)..."
-	@./$(BUILD_DIR)/$(APP_NAME)
-
-dev: ## Run the application in development mode with live reload
-	@echo "🔄 Starting development server..."
-	@PORT=8080 DYNAMODB_ENDPOINT=http://localhost:8000 LOG_LEVEL=DEBUG DYNAMODB_TABLE=chargebacks AWS_REGION=us-east-1 AWS_ACCESS_KEY_ID=fakeMyKeyId AWS_SECRET_ACCESS_KEY=fakeSecretAccessKey go run ./cmd/api/main.go
-
+# Clean
 clean: ## Clean build artifacts and coverage reports
 	@echo "🧹 Cleaning..."
-	@rm -rf $(BUILD_DIR) $(COVERAGE_DIR) *.out *.html
+	@rm -rf $(BUILD_DIR) $(COVERAGE_DIR) *.out *.html $(LAMBDA_ZIP)
 	@echo "✅ Clean complete"
 
+# Dependencies
 deps: ## Download and tidy dependencies
 	@echo "📦 Downloading dependencies..."
 	@go mod download
 	@go mod tidy
 	@echo "✅ Dependencies updated"
 
+mod-tidy: ## Tidy go modules
+	@echo "📦 Tidying modules..."
+	@go mod tidy
+
+# Code quality
 fmt: ## Format Go code
 	@echo "🎨 Formatting code..."
 	@go fmt ./...
@@ -60,6 +54,9 @@ lint: ## Run golangci-lint (requires golangci-lint to be installed)
 	@echo "🔍 Running linter..."
 	@golangci-lint run || echo "⚠️  Install golangci-lint: https://golangci-lint.run/usage/install/"
 
+check: fmt vet lint test ## Run all quality checks
+
+# Tests
 test: ## Run all tests
 	@echo "🧪 Running all tests..."
 	@go test -v ./...
@@ -72,9 +69,21 @@ test-unit: ## Run unit tests (domain + usecase)
 	@echo "🧪 Running unit tests..."
 	@go test -v $(UNIT_PACKAGES)
 
-test-integration: ## Run integration tests (infra + api + server)
+test-integration: ## Run integration tests (infra)
 	@echo "🧪 Running integration tests..."
 	@go test -v $(INTEGRATION_PACKAGES)
+
+test-domain: ## Run domain layer tests only
+	@echo "🏛️ Running domain tests..."
+	@go test -v $(DOMAIN_PACKAGES)
+
+test-infra: ## Run infrastructure tests only
+	@echo "🔧 Running infrastructure tests..."
+	@go test -v $(INFRA_PACKAGES)
+
+test-focus: ## Run tests excluding examples, docs, and build artifacts
+	@echo "🎯 Running focused tests..."
+	@go test -v $(INTERNAL_PACKAGES)
 
 test-coverage: ## Generate coverage report for internal packages only
 	@echo "📊 Generating coverage report..."
@@ -89,39 +98,14 @@ test-coverage-summary: ## Show coverage summary for internal packages
 	@echo "=============================================="
 	@go test -cover $(INTERNAL_PACKAGES) 2>/dev/null | grep -E "(coverage:|ok)" | sort
 
-# Exclude directories that don't need tests
-test-focus: ## Run tests excluding examples, docs, and build artifacts
-	@echo "🎯 Running focused tests (excluding examples, docs, build artifacts)..."
-	@go test -v $(INTERNAL_PACKAGES) ./cmd/api
+coverage-check: test-coverage ## Check if coverage meets minimum thresholds
+	@echo "🎯 Checking coverage thresholds..."
+	@go tool cover -func=$(COVERAGE_DIR)/coverage.out | grep "total:" | awk '{if ($$3+0 < 70) {print "❌ Coverage " $$3 " below 70% threshold"; exit 1} else {print "✅ Coverage " $$3 " meets threshold"}}'
 
-test-domain: ## Run domain layer tests only
-	@echo "🏛️ Running domain tests..."
-	@go test -v $(DOMAIN_PACKAGES)
+ci-test: test-coverage ## Run tests for CI/CD (with coverage)
+	@echo "🏗️  CI tests complete"
 
-test-infra: ## Run infrastructure tests only
-	@echo "🔧 Running infrastructure tests..."
-	@go test -v $(INFRA_PACKAGES)
-
-# Docker commands
-docker-build: ## Build Docker image
-	@echo "🐳 Building Docker image..."
-	@docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
-	@echo "✅ Docker image built: $(DOCKER_IMAGE):$(DOCKER_TAG)"
-
-docker-run: ## Run Docker container
-	@echo "🐳 Running Docker container..."
-	@docker run -p 8080:8080 \
-		-e AWS_REGION=us-east-1 \
-		-e DYNAMODB_ENDPOINT=http://host.docker.internal:8000 \
-		-e DYNAMODB_TABLE=chargebacks \
-		$(DOCKER_IMAGE):$(DOCKER_TAG)
-
-docker-clean: ## Remove Docker image
-	@echo "🐳 Cleaning Docker image..."
-	@docker rmi $(DOCKER_IMAGE):$(DOCKER_TAG) || true
-	@echo "✅ Docker cleanup complete"
-
-# Development environment
+# DynamoDB Local
 setup-local-db: ## Start local DynamoDB using Docker
 	@echo "🗄️ Starting local DynamoDB..."
 	@docker run -d -p 8000:8000 --name dynamodb-local amazon/dynamodb-local || echo "DynamoDB container already running"
@@ -154,18 +138,6 @@ create-table: ## Create DynamoDB table locally
 		|| echo "Table may already exist"
 	@echo "✅ Table created"
 
-create-table-simple: ## Create simple DynamoDB table for development (no GSIs)
-	@echo "📋 Creating simple DynamoDB table for development..."
-	@AWS_ACCESS_KEY_ID=dummy AWS_SECRET_ACCESS_KEY=dummy AWS_REGION=us-east-1 \
-	aws dynamodb create-table \
-		--table-name chargebacks \
-		--attribute-definitions AttributeName=id,AttributeType=S \
-		--key-schema AttributeName=id,KeyType=HASH \
-		--billing-mode PAY_PER_REQUEST \
-		--endpoint-url http://localhost:8000 \
-		|| echo "Table may already exist"
-	@echo "✅ Simple table created (works with scan fallback)"
-
 drop-table: ## Delete DynamoDB table locally
 	@echo "🗑️  Dropping DynamoDB table..."
 	@AWS_ACCESS_KEY_ID=dummy AWS_SECRET_ACCESS_KEY=dummy AWS_REGION=us-east-1 \
@@ -197,55 +169,6 @@ debug-db: ## Debug DynamoDB Local status and tables
 	@AWS_ACCESS_KEY_ID=dummy AWS_SECRET_ACCESS_KEY=dummy AWS_REGION=us-east-1 \
 	aws dynamodb list-tables --endpoint-url http://localhost:8000
 
-# All-in-one development setup
-dev-setup: setup-local-db create-table deps ## Set up complete development environment
-	@echo "🎉 Development environment ready!"
-	@echo "   - DynamoDB Local: http://localhost:8000"
-	@echo "   - Run 'make dev' to start the API"
-
-# Quality checks
-check: fmt vet lint test ## Run all quality checks
-
-# Production build
-build-prod: ## Build production binary with optimizations
-	@echo "🏭 Building production binary..."
-	@CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o $(BUILD_DIR)/$(APP_NAME) ./cmd/api
-	@echo "✅ Production build complete: $(BUILD_DIR)/$(APP_NAME)"
-
-run: build ## Build and run the application
-	@echo "🚀 Starting $(APP_NAME)..."
-	@./$(BUILD_DIR)/$(APP_NAME)
-
-# Development helpers
-fmt: ## Format code
-	@echo "🎨 Formatting code..."
-	@go fmt ./...
-
-lint: ## Run linter (requires golangci-lint)
-	@echo "🔍 Running linter..."
-	@golangci-lint run
-
-mod-tidy: ## Tidy go modules
-	@echo "📦 Tidying modules..."
-	@go mod tidy
-
-dev-setup: mod-tidy fmt ## Setup development environment
-	@echo "🛠️  Development setup complete"
-
-# CI/CD helpers
-ci-test: test-coverage ## Run tests for CI/CD (with coverage)
-	@echo "🏗️  CI tests complete"
-
-# Docker helpers (if needed later)
-docker-build: ## Build Docker image
-	@echo "🐳 Building Docker image..."
-	@docker build -t $(APP_NAME) .
-
-# Coverage thresholds
-coverage-check: test-coverage ## Check if coverage meets minimum thresholds
-	@echo "🎯 Checking coverage thresholds..."
-	@go tool cover -func=$(COVERAGE_DIR)/coverage.out | grep "total:" | awk '{if ($$3+0 < 70) {print "❌ Coverage " $$3 " below 70% threshold"; exit 1} else {print "✅ Coverage " $$3 " meets threshold"}}'
-
 # Lambda-specific targets
 build-lambda: ## Build Lambda deployment package
 	@echo "🔨 Building Lambda function..."
@@ -269,9 +192,34 @@ deploy-lambda: build-lambda ## Deploy to AWS Lambda
 		--region us-east-1
 	@echo "✅ Deployment complete"
 
-test-lambda: build-lambda ## Test Lambda function locally with SAM
+test-lambda-local: ## Test Lambda function locally with SAM (using local template)
 	@echo "🧪 Testing Lambda function locally..."
-	@sam local start-api --template template.yaml
+	@./scripts/start-local-env.sh
+
+start-sam: build-lambda ## Start SAM local API
+	@echo "🚀 Starting SAM Local API..."
+	@sam local start-api --template template.local.yaml --log-file /tmp/sam.log
+
+stop-sam: ## Stop SAM local API
+	@echo "🛑 Stopping SAM Local API..."
+	@pkill -f "sam local start-api" || echo "SAM not running"
+
+dynamodb-scan: ## Scan DynamoDB local table
+	@echo "📋 Scanning chargebacks-lambda table..."
+	@AWS_ACCESS_KEY_ID=dummy AWS_SECRET_ACCESS_KEY=dummy aws dynamodb scan \
+		--table-name chargebacks-lambda \
+		--endpoint-url http://localhost:8000 \
+		--region us-east-1 \
+		--output json | jq '.Items | length as $$count | {count: $$count, items: . | map({id: .id.S, transaction_id: .transaction_id.S, amount: .amount.N, status: .status.S})}'
+
+test-api: ## Test API endpoints
+	@echo "🧪 Testing API endpoints..."
+	@echo "\n1. Health Check:"
+	@curl -s http://localhost:3000/health | jq .
+	@echo "\n2. Creating test chargeback:"
+	@curl -s -X POST http://localhost:3000/chargebacks \
+		-H "Content-Type: application/json" \
+		-d '{"transaction_id":"TEST-$(shell date +%s)","merchant_id":"MERCH-TEST","amount":99.99,"currency":"USD","card_number":"****1111","reason":"fraud","description":"Test chargeback","transaction_date":"2025-01-15T10:30:00Z"}' | jq .
 
 clean-lambda: ## Clean Lambda build artifacts
 	@echo "🧹 Cleaning Lambda artifacts..."

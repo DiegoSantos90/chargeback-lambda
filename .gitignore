@@ -35,8 +35,8 @@ go.work.sum
 .env
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
 
 # Lambda specific
 lambda-function.zip
@@ -45,3 +45,9 @@ bootstrap
 
 # AWS SAM
 .aws-sam/
+template.local.yaml  # Local testing template with dummy credentials
+
+# SAM logs
+/tmp/sam.log
+/tmp/sam-output.log
+/tmp/sam.pid
