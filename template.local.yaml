@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Chargeback API Lambda Function
+Description: Chargeback API Lambda Function - LOCAL DEVELOPMENT
 
 Globals:
   Function:
@@ -24,9 +24,17 @@ Resources:
             Method: ANY
       Environment:
         Variables:
+          # AWS Credentials for DynamoDB Local (dummy values required)
           AWS_REGION: us-east-1
-          DYNAMODB_TABLE: chargebacks
-          LOG_LEVEL: INFO
+          AWS_ACCESS_KEY_ID: dummy
+          AWS_SECRET_ACCESS_KEY: dummy
+          
+          # DynamoDB Configuration
+          DYNAMODB_TABLE: chargebacks-lambda
+          DYNAMODB_ENDPOINT: http://host.docker.internal:8000
+          
+          # Application Configuration
+          LOG_LEVEL: DEBUG
           LOG_FORMAT: json
           SERVICE_NAME: chargeback-lambda
 

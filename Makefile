@@ -269,9 +269,34 @@ deploy-lambda: build-lambda ## Deploy to AWS Lambda
 		--region us-east-1
 	@echo "✅ Deployment complete"
 
-test-lambda: build-lambda ## Test Lambda function locally with SAM
+test-lambda-local: ## Test Lambda function locally with SAM (using local template)
 	@echo "🧪 Testing Lambda function locally..."
-	@sam local start-api --template template.yaml
+	@./scripts/start-local-env.sh
+
+start-sam: build-lambda ## Start SAM local API (alias for test-lambda-local)
+	@echo "🚀 Starting SAM Local API..."
+	@sam local start-api --template template.local.yaml --log-file /tmp/sam.log
+
+stop-sam: ## Stop SAM local API
+	@echo "🛑 Stopping SAM Local API..."
+	@pkill -f "sam local start-api" || echo "SAM not running"
+
+dynamodb-scan: ## Scan DynamoDB local table
+	@echo "📋 Scanning chargebacks-lambda table..."
+	@AWS_ACCESS_KEY_ID=dummy AWS_SECRET_ACCESS_KEY=dummy aws dynamodb scan \
+		--table-name chargebacks-lambda \
+		--endpoint-url http://localhost:8000 \
+		--region us-east-1 \
+		--output json | jq '.Items | length as $$count | {count: $$count, items: . | map({id: .id.S, transaction_id: .transaction_id.S, amount: .amount.N, status: .status.S})}'
+
+test-api: ## Test API endpoints
+	@echo "🧪 Testing API endpoints..."
+	@echo "\n1. Health Check:"
+	@curl -s http://localhost:3000/health | jq .
+	@echo "\n2. Creating test chargeback:"
+	@curl -s -X POST http://localhost:3000/chargebacks \
+		-H "Content-Type: application/json" \
+		-d '{"transaction_id":"TEST-$(shell date +%s)","merchant_id":"MERCH-TEST","amount":99.99,"currency":"USD","card_number":"****1111","reason":"fraud","description":"Test chargeback","transaction_date":"2025-01-15T10:30:00Z"}' | jq .
 
 clean-lambda: ## Clean Lambda build artifacts
 	@echo "🧹 Cleaning Lambda artifacts..."
