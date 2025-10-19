@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/DiegoSantos90/chargeback-api-lambda/internal/domain/service"
-	"github.com/DiegoSantos90/chargeback-api-lambda/internal/infra/logging"
+	"github.com/DiegoSantos90/chargeback-lambda/internal/domain/service"
+	"github.com/DiegoSantos90/chargeback-lambda/internal/infra/logging"
 )
 
 // TestLoggingIntegration_EndToEnd tests the complete logging flow

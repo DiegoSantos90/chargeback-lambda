@@ -1,8 +1,9 @@
-module github.com/DiegoSantos90/chargeback-api-lambda
+module github.com/DiegoSantos90/chargeback-lambda
 
 go 1.25.2
 
 require (
+	github.com/aws/aws-lambda-go v1.50.0
 	github.com/aws/aws-sdk-go-v2 v1.39.3
 	github.com/aws/aws-sdk-go-v2/config v1.31.12
 	github.com/aws/aws-sdk-go-v2/credentials v1.18.17
@@ -11,7 +12,6 @@ require (
 )
 
 require (
-	github.com/aws/aws-lambda-go v1.50.0 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.10 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.10 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.10 // indirect
@@ -24,5 +24,4 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.38.7 // indirect
 	github.com/aws/smithy-go v1.23.1 // indirect
-	github.com/awslabs/aws-lambda-go-api-proxy v0.16.2 // indirect
 )

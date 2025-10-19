@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DiegoSantos90/chargeback-api-lambda/internal/domain/entity"
-	"github.com/DiegoSantos90/chargeback-api-lambda/internal/usecase"
+	"github.com/DiegoSantos90/chargeback-lambda/internal/domain/entity"
+	"github.com/DiegoSantos90/chargeback-lambda/internal/usecase"
 )
 
 // MockChargebackRepository is a mock implementation of ChargebackRepository

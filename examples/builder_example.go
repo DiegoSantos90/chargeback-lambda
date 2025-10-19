@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/DiegoSantos90/chargeback-api-lambda/internal/domain/entity"
+	"github.com/DiegoSantos90/chargeback-lambda/internal/domain/entity"
 )
 
 func main() {

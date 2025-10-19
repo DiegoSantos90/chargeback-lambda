@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/DiegoSantos90/chargeback-api-lambda/internal/api/http/handler"
-	"github.com/DiegoSantos90/chargeback-api-lambda/internal/domain/service"
-	"github.com/DiegoSantos90/chargeback-api-lambda/internal/usecase"
+	"github.com/DiegoSantos90/chargeback-lambda/internal/api/http/handler"
+	"github.com/DiegoSantos90/chargeback-lambda/internal/domain/service"
+	"github.com/DiegoSantos90/chargeback-lambda/internal/usecase"
 )
 
 // CreateChargebackUseCase interface defines the contract for creating chargebacks

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/DiegoSantos90/chargeback-api-lambda/internal/domain/service"
+	"github.com/DiegoSantos90/chargeback-lambda/internal/domain/service"
 )
 
 // TestStructuredLogger_New tests the creation of a new structured logger

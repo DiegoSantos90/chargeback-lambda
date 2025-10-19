@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DiegoSantos90/chargeback-api-lambda/internal/domain/entity"
-	"github.com/DiegoSantos90/chargeback-api-lambda/internal/domain/service"
-	"github.com/DiegoSantos90/chargeback-api-lambda/internal/usecase"
+	"github.com/DiegoSantos90/chargeback-lambda/internal/domain/entity"
+	"github.com/DiegoSantos90/chargeback-lambda/internal/domain/service"
+	"github.com/DiegoSantos90/chargeback-lambda/internal/usecase"
 )
 
 // MockCreateChargebackUseCase for testing

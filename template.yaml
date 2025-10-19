@@ -28,7 +28,7 @@ Resources:
           DYNAMODB_TABLE: chargebacks-lambda
           LOG_LEVEL: INFO
           LOG_FORMAT: json
-          SERVICE_NAME: chargeback-api-lambda
+          SERVICE_NAME: chargeback-lambda
 
 Outputs:
   ChargebackApiUrl:

@@ -3,7 +3,7 @@
 .PHONY: test test-coverage test-internal test-unit test-integration test-domain test-infra clean build run dev docker-build docker-run lint fmt vet deps help build-lambda deploy-lambda test-lambda
 
 # Build configuration
-APP_NAME=chargeback-api-lambda
+APP_NAME=chargeback-lambda
 BUILD_DIR=bin
 COVERAGE_DIR=coverage
 LAMBDA_ZIP=lambda-function.zip
